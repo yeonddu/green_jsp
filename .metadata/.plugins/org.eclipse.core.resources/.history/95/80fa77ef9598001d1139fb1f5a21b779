@@ -1,0 +1,192 @@
+package com.spring.news.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
+
+import com.spring.news.service.NewsService;
+import com.spring.news.service.NewsServiceImpl;
+import com.spring.news.vo.NewsVO;
+
+public class NewsControllerImpl extends MultiActionController implements NewsController {
+	
+	private NewsService newsService;
+	/* private static String ARTICLE_IMAGE_REPO = "C:\\board\\article_image"; */
+	
+	// setter로 newsService 빈을 주입
+	public void setNewsService(NewsServiceImpl newsService) {
+		this.newsService = newsService;
+	}
+
+	@Override
+	public ModelAndView listNews(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		String viewName = "newsList";
+		List newsList = newsService.listNews();
+		ModelAndView mav = new ModelAndView(viewName);
+		// ModelAndView의 addObject()메서드를 이용해 조회된 회원정보 바인딩
+		mav.addObject("newsList", newsList);
+		return mav;
+	}
+	
+	@Override
+	public ModelAndView addNews(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		request.setCharacterEncoding("utf-8");
+		String title = request.getParameter("title");
+		NewsVO newsVO = new NewsVO();
+		//회원가입창에서 전송된 회원정보를 newsVO 속성에 자동으로 설정
+		bind(request,newsVO);
+		int result = 0;
+		result = newsService.addNews(newsVO);
+		ModelAndView mav = new ModelAndView("redirect:/news/listNews.do"); //ModelAndView 클래스의 redirect 속성을 이용해 회원 목록창으로 리다이렉트
+		
+		response.setContentType("text/html;charset=utf-8");
+		//파일추가
+		
+		File currentDirPath = new File("C:\\file_repo");
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+		factory.setRepository(currentDirPath);
+		factory.setSizeThreshold(1024*1024);
+		ServletFileUpload upload = new ServletFileUpload(factory);
+		
+		try {
+			
+		List items = upload.parseRequest(request);
+		for(int i=0;i<items.size();i++) {
+			FileItem fileItem = (FileItem) items.get(i);
+			if(fileItem.isFormField()) {
+			} else {
+				System.out.println("매개변수 이름: " + fileItem.getFieldName());
+				System.out.println("파일이름: " + fileItem.getName());
+				System.out.println("파일크기: " + fileItem.getSize() + "bytes");
+				if(fileItem.getSize()>0) {
+					int idx = fileItem.getName().lastIndexOf("\\");
+					if(idx == -1) {
+						idx = fileItem.getName().lastIndexOf("/");
+						String fileName = fileItem.getName().substring(idx+1);
+						File uploadFile = new File(currentDirPath+"\\" + fileName);
+						fileItem.write(uploadFile);
+						} //end if
+					} //end if
+				} //end for
+			}
+
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		/*
+		 * Map<String, String> newsMap = upload(request,response);
+		 * 
+		 * String img = request.getParameter("img"); String aidStr =
+		 * request.getParameter("aid"); int aid = Integer.parseInt(aidStr);
+		 * 
+		 * if(img != null && img.length() != 0) { File srcFile = new
+		 * File(ARTICLE_IMAGE_REPO + "\\" + "temp" + "\\" + img); File destDir = new
+		 * File(ARTICLE_IMAGE_REPO + "\\" + aid); destDir.mkdirs();
+		 * FileUtils.moveFileToDirectory(srcFile, destDir, true); srcFile.delete(); }
+		 */
+		
+		return mav;
+	}
+	
+	@Override
+	public ModelAndView removeNews(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		request.setCharacterEncoding("utf-8");
+		String aidStr = request.getParameter("aid");
+		int aid = Integer.parseInt(aidStr);
+		newsService.removeNews(aid);
+		ModelAndView mav = new ModelAndView("redirect:/news/listNews.do");
+		return mav;
+	}
+	
+	
+	/*private Map<String, String> upload(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		Map<String, String> newsMap = new HashMap<String, String>();
+		String encoding="utf-8";
+		File currentDirPath = new File(ARTICLE_IMAGE_REPO);
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+		factory.setRepository(currentDirPath);
+		factory.setSizeThreshold(1024*1024);
+		ServletFileUpload upload = new ServletFileUpload(factory);
+		try {
+			List items = upload.parseRequest(request);
+			for(int i=0;i<items.size();i++) {
+				FileItem fileItem = (FileItem) items.get(i);
+				if(fileItem.isFormField()) {
+					System.out.println(fileItem.getFieldName() + "=" + fileItem.getString(encoding));
+					newsMap.put(fileItem.getFieldName(), fileItem.getString(encoding));                  
+				} else {
+					System.out.println("파라미터명: " + fileItem.getFieldName());
+					System.out.println("파일크기: " + fileItem.getSize() + "bytes");
+
+					if (fileItem.getSize() > 0) {
+						int idx = fileItem.getName().lastIndexOf("\\");
+						if(idx == -1) {
+							idx = fileItem.getName().lastIndexOf("/");
+						}
+						String fileName = fileItem.getName().substring(idx + 1);
+						System.out.println("파일명: " + fileName);
+						newsMap.put(fileItem.getFieldName(),fileName );
+						File uploadFile = new File(currentDirPath + "\\temp\\" + fileName);
+						fileItem.write(uploadFile);
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return newsMap;
+		
+	}
+	*/
+	public ModelAndView form(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		String viewName = "";
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName(viewName);
+		return mav;
+	}
+	
+	//수정 추가
+	@Override
+	public ModelAndView viewNews(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		request.setCharacterEncoding("utf-8");
+		String aidStr = request.getParameter("aid");
+		int aid = Integer.parseInt(aidStr);		
+		
+		NewsVO newsInfo = newsService.modNews(aid);
+		
+		String viewName = "newsView";
+		ModelAndView mav = new ModelAndView(viewName);
+		mav.addObject("newsInfo", newsInfo);
+		return mav;
+	}
+	
+	//수정
+	@Override
+	public ModelAndView updateNews(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		request.setCharacterEncoding("utf-8");
+		NewsVO newsVO = new NewsVO();
+		
+		bind(request,newsVO);
+		int result = 0;
+		result = newsService.updateNews(newsVO);
+		ModelAndView mav = new ModelAndView("redirect:/news/listNews.do");
+		return mav;
+	}
+	
+
+	
+}

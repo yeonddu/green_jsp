@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans   
+http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/tx
+http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- jdbc.properties 파일에서 데이터베이스 설정 관련 정보 읽기  -->
+	<bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<value>/WEB-INF/config/jdbc.properties</value>
+		</property>
+	</bean>
+
+	<!--  dataSource 빈 생성 -->
+	<bean id="dataSource" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
+		<property name="driver" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+	
+	<!-- dataSource 속성에 dataSource 빈 설정 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:mybatis/model/modelConfig.xml" /> <!-- configLocation 속성에 modelConfig.xml 설정 -->
+		<property name="mapperLocations" value="classpath:mybatis/mappers/*.xml" /> <!-- mapperLocations 속성에 mybatis/mappers 패키지의 모든 매퍼 파일을 읽어와 설정 -->
+	</bean>
+	
+	<!-- sqlSession 빈 생성 // 마리아 DB와 물리적 연결 -->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+	</bean>
+	
+	<!-- newsDAO빈 속성에 sqlSession빈 주입 -->
+	<bean id="newsDAO" class="com.spring.news.dao.NewsDAOImpl">
+		<property name="sqlSession" ref="sqlSession"></property>
+	</bean>
+</beans>

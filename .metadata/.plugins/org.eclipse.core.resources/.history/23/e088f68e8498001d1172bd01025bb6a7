@@ -1,0 +1,104 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8" isELIgnored="false"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="contextPath" value="${pageContext.request.contextPath }" />
+<% request.setCharacterEncoding("utf-8"); %>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>뉴스 목록</title>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript">
+	
+	 function fn_enable(obj){
+         document.getElementById("i_title").disabled=false;
+         document.getElementById("i_content").disabled=false;
+         document.getElementById("i_imageFileName").disabled=false;
+         document.getElementById("tr_btn_modify").style.display="block";
+         document.getElementById("tr_btn").style.display="none";
+     }
+	
+	function fn_remove_article(url,articleNO){
+		var form = document.createElement("form");
+			form.setAttribute("method", "post");
+			form.setAttribute("action", url);
+		var articleNOInput = document.createElement("input");
+		articleNOInput.setAttribute("type","hidden");
+		articleNOInput.setAttribute("name","articleNO");
+		articleNOInput.setAttribute("value",articleNO);
+		
+		form.appendChild(articleNOInput);
+		document.body.appendChild(form);
+		form.submit();
+	}
+	
+	function readURL(input) {
+		if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#preview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+		}
+	}
+
+</script>
+
+</head>
+<body>
+	<h1>뉴스 목록</h1>
+	<hr>
+	<table width="80%">
+		<c:choose>
+	<c:when test="${empty newsList }">
+		<tr height="10">
+			<td colspan="4">
+				<p align="center"><b><span style="font-size:9pt">등록된 글이 없습니다.</span></b></p>
+			</td>
+		</tr>
+	</c:when>
+	<c:when test="${!empty newsList}">
+	<c:forEach var="news" items="${newsList }">
+		<tr align="center">
+			<td>[${news.aid }] ${news.title } <br>
+				${news.date }
+			</td>
+			<td><a href="${contextPath }/news/removeNews.do?aid=${news.aid }">삭제</a></td>
+		</tr>
+	</c:forEach>
+	</c:when>
+	</c:choose>
+	</table>
+	<input type="button" value="등록하기" onClick="fn_addbtn(this.form)">
+
+	<form name="articleForm" method="post" action="${contextPath }/news/addNews.do" enctype="multipart/form-data">
+		<table>
+			<tr>
+				<td>
+				제목<br>
+				<input type="text" name="title">
+				</td>
+			</tr>
+			<tr>
+				<td>
+				이미지<br>
+				<input type="file" name="img" onchange="readUTL(this);">
+				<img id="preview" src="#" width="200" height="200"/>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				글쓰기<br>
+				<textarea name="content" rows="10" cols="65" maxlength="1000"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<input type="submit" value="저장" />
+				</td>
+			</tr>
+		</table>
+	</form>
+</body>
+</html>
